@@ -1,0 +1,853 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+<meta name="theme-color" content="#1a4d8f">
+<meta name="description" content="Albowry Carpentry LLC - Premium Invoice Management System">
+<title>Albowry Carpentry LLC | Invoice Pro v3.1</title>
+
+<!-- PWA -->
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+
+<!-- Stylesheet -->
+<link rel="stylesheet" href="style.css">
+
+<!-- Libraries -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+</head>
+<body>
+
+<!-- 🎬 LOADING SCREEN -->
+<div class="loading-screen" id="loadingScreen">
+    <div class="loading-content">
+        <img id="loadingLogo" src="company-logo.png" alt="Albowry Logo" onerror="this.style.display='none';document.getElementById('loadingFallback').style.display='flex';">
+        <div id="loadingFallback" class="loading-logo-fallback" style="display:none;">ABC</div>
+        <div class="loading-title">ALBOWRY CARPENTRY</div>
+        <div class="loading-subtitle">Invoice Pro v3.1 Loading...</div>
+        <div class="loading-bar">
+            <div class="loading-progress"></div>
+        </div>
+    </div>
+</div>
+
+<!-- 📱 APP CONTAINER -->
+<div class="app-container">
+
+    <!-- SIDEBAR OVERLAY -->
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+
+    <!-- 🎨 SIDEBAR -->
+    <aside class="sidebar" id="sidebar">
+        
+        <!-- Brand -->
+        <div class="sidebar-brand">
+            <img id="sidebarLogo" src="company-logo.png" alt="Logo" class="app-logo" onerror="this.src='icon-192.png'">
+            <div class="brand-info">
+                <h3>ALBOWRY</h3>
+                <span>Carpentry LLC</span>
+            </div>
+        </div>
+
+        <!-- Navigation -->
+        <nav class="sidebar-nav">
+            
+            <div class="nav-section">
+                <div class="nav-section-title">Main Menu</div>
+                <div class="nav-item active" data-page="dashboard" onclick="showPage('dashboard', this)">
+                    <span class="nav-icon">📊</span>
+                    <span class="nav-text">Dashboard</span>
+                </div>
+                <div class="nav-item" data-page="create" onclick="showPage('create', this)">
+                    <span class="nav-icon">➕</span>
+                    <span class="nav-text">Create Invoice</span>
+                    <span class="badge badge-gold">NEW</span>
+                </div>
+                <div class="nav-item" data-page="invoices" onclick="showPage('invoices', this)">
+                    <span class="nav-icon">📄</span>
+                    <span class="nav-text">All Invoices</span>
+                    <span class="badge" id="invCount">0</span>
+                </div>
+                <div class="nav-item" data-page="clients" onclick="showPage('clients', this)">
+                    <span class="nav-icon">👥</span>
+                    <span class="nav-text">Clients</span>
+                    <span class="badge" id="clientCount">0</span>
+                </div>
+            </div>
+
+            <div class="nav-section">
+                <div class="nav-section-title">System</div>
+                <div class="nav-item" data-page="settings" onclick="showPage('settings', this)">
+                    <span class="nav-icon">⚙️</span>
+                    <span class="nav-text">Settings</span>
+                </div>
+                <div class="nav-item" onclick="showAboutModal()">
+                    <span class="nav-icon">ℹ️</span>
+                    <span class="nav-text">About</span>
+                </div>
+            </div>
+
+        </nav>
+
+        <!-- Footer -->
+        <div class="sidebar-footer">
+            <div class="theme-toggle" onclick="toggleTheme()">
+                <span id="themeIcon">🌙</span>
+                <span id="themeText">Dark Mode</span>
+            </div>
+            <div class="version-info">v3.1.0 • BLUE THEME</div>
+        </div>
+
+    </aside>
+
+    <!-- 🎯 MAIN CONTENT -->
+    <main class="main-content">
+
+        <!-- TOPBAR -->
+        <div class="topbar">
+            <div class="topbar-left">
+                <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
+                <img id="topbarLogo" src="company-logo.png" alt="Logo" class="app-logo" onerror="this.style.display='none'">
+                <div class="topbar-title">
+                    <h2 id="pageTitle">Dashboard</h2>
+                    <p id="pageSubtitle">Overview of your invoices</p>
+                </div>
+            </div>
+            <div class="topbar-right">
+                <div class="search-wrap">
+                    <span class="search-icon">🔍</span>
+                    <input type="text" placeholder="Search invoices..." oninput="searchInvoices(this.value)">
+                </div>
+                <button class="topbar-btn btn-gold" onclick="quickNewInvoice()">
+                    <span>➕ New Invoice</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- 📄 PAGE CONTENT -->
+        <div class="page-content">
+
+            <!-- ═══════ DASHBOARD PAGE ═══════ -->
+            <div class="page active" id="page-dashboard">
+                
+                <div class="welcome-banner">
+                    <div class="welcome-text">
+                        <h1>Welcome Back! 👋</h1>
+                        <p>Manage your invoices with ease and professionalism</p>
+                    </div>
+                    <div class="welcome-actions">
+                        <button class="topbar-btn btn-gold" onclick="quickNewInvoice()">➕ Create Invoice</button>
+                    </div>
+                </div>
+
+                <div class="stats-grid">
+                    <div class="stat-card stat-blue" onclick="showPage('invoices', document.querySelector('[data-page=invoices]'))">
+                        <div class="stat-header">
+                            <div class="stat-icon">📄</div>
+                        </div>
+                        <div class="stat-value" id="statTotal">0</div>
+                        <div class="stat-label">Total Invoices</div>
+                    </div>
+                    <div class="stat-card stat-green">
+                        <div class="stat-header">
+                            <div class="stat-icon">💰</div>
+                        </div>
+                        <div class="stat-value" id="statRevenue">AED 0</div>
+                        <div class="stat-label">Total Revenue</div>
+                    </div>
+                    <div class="stat-card stat-orange">
+                        <div class="stat-header">
+                            <div class="stat-icon">⏳</div>
+                        </div>
+                        <div class="stat-value" id="statPending">0</div>
+                        <div class="stat-label">Pending</div>
+                    </div>
+                    <div class="stat-card stat-red">
+                        <div class="stat-header">
+                            <div class="stat-icon">⚠️</div>
+                        </div>
+                        <div class="stat-value" id="statOverdue">0</div>
+                        <div class="stat-label">Overdue</div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-header-left">
+                            <div class="card-icon ci-blue">⚡</div>
+                            <div>
+                                <h3>Quick Actions</h3>
+                                <p>Common tasks at your fingertips</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="quick-actions">
+                            <button class="quick-action-btn" onclick="quickNewInvoice()">
+                                <div class="qa-icon">➕</div>
+                                <div class="qa-text">New Invoice</div>
+                            </button>
+                            <button class="quick-action-btn" onclick="showPage('invoices', document.querySelector('[data-page=invoices]'))">
+                                <div class="qa-icon">📄</div>
+                                <div class="qa-text">View Invoices</div>
+                            </button>
+                            <button class="quick-action-btn" onclick="showPage('clients', document.querySelector('[data-page=clients]'))">
+                                <div class="qa-icon">👥</div>
+                                <div class="qa-text">Clients</div>
+                            </button>
+                            <button class="quick-action-btn" onclick="exportAllJSON()">
+                                <div class="qa-icon">💾</div>
+                                <div class="qa-text">Backup</div>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-header-left">
+                            <div class="card-icon ci-gold">📋</div>
+                            <div>
+                                <h3>Recent Invoices</h3>
+                                <p>Your latest 5 invoices</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="recentInvoices" class="empty-state">
+                        <div class="empty-icon">📄</div>
+                        <div class="empty-title">No invoices yet</div>
+                        <div class="empty-text">Create your first invoice to get started!</div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- ═══════ CREATE INVOICE PAGE ═══════ -->
+            <div class="page" id="page-create">
+
+                <!-- Invoice Details -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-header-left">
+                            <div class="card-icon ci-blue">📋</div>
+                            <div>
+                                <h3>Invoice Details</h3>
+                                <p>Basic invoice information</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label class="form-label">Invoice Number <span class="required">*</span></label>
+                                <div class="inv-number-wrap">
+                                    <input type="text" id="invNo" class="form-input inv-number" readonly onclick="editInvNumber()">
+                                    <button class="inv-num-btn" onclick="resetInvNumber()" title="Reset">🔄</button>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Invoice Date <span class="required">*</span></label>
+                                <input type="date" id="invDate" class="form-input">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Due Date</label>
+                                <input type="date" id="dueDate" class="form-input">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Currency</label>
+                                <select id="currency" class="form-select" onchange="calcAll()"></select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Status</label>
+                                <select id="invStatus" class="form-select">
+                                    <option value="pending">⏳ Pending</option>
+                                    <option value="paid">✅ Paid</option>
+                                    <option value="overdue">⚠️ Overdue</option>
+                                    <option value="draft">📝 Draft</option>
+                                    <option value="cancelled">❌ Cancelled</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">PO / Reference</label>
+                                <input type="text" id="poRef" class="form-input" placeholder="PO-2024-XXX">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bill From & To -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-header-left">
+                            <div class="card-icon ci-gold">👥</div>
+                            <div>
+                                <h3>Bill From & To</h3>
+                                <p>Company and client details</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-grid">
+                            <!-- FROM -->
+                            <div class="form-group col-full">
+                                <label class="form-label" style="color:var(--primary);font-weight:800;">📤 BILL FROM (Your Company)</label>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Company Name</label>
+                                <input type="text" id="fromName" class="form-input">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Email</label>
+                                <input type="email" id="fromEmail" class="form-input">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Phone</label>
+                                <input type="text" id="fromPhone" class="form-input">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">TRN</label>
+                                <input type="text" id="fromTrn" class="form-input">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Website</label>
+                                <input type="text" id="fromWeb" class="form-input">
+                            </div>
+                            <div class="form-group col-2">
+                                <label class="form-label">Address</label>
+                                <input type="text" id="fromAddr" class="form-input">
+                            </div>
+
+                            <!-- TO -->
+                            <div class="form-group col-full" style="margin-top:20px;">
+                                <label class="form-label" style="color:var(--red);font-weight:800;">📥 BILL TO (Client)</label>
+                            </div>
+                            <div class="form-group" style="position:relative;">
+                                <label class="form-label">Client Name <span class="required">*</span> 
+                                    <button style="margin-left:auto;background:none;border:none;cursor:pointer;color:var(--primary);font-size:0.7rem;" onclick="openClientPicker()">📋 Pick</button>
+                                </label>
+                                <input type="text" id="toName" class="form-input" placeholder="Type to search..." oninput="clientNameSearch(this.value)" autocomplete="off">
+                                <div id="clientSuggest" class="client-suggest"></div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Contact Person</label>
+                                <input type="text" id="toContact" class="form-input">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Email</label>
+                                <input type="email" id="toEmail" class="form-input">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Phone</label>
+                                <input type="text" id="toPhone" class="form-input">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">TRN</label>
+                                <input type="text" id="toTrn" class="form-input">
+                            </div>
+                            <div class="form-group col-2">
+                                <label class="form-label">Address</label>
+                                <input type="text" id="toAddr" class="form-input">
+                            </div>
+                            <div class="form-group col-full">
+                                <button class="topbar-btn btn-outline" onclick="saveCurrentClient()">💾 Save Client to Database</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Items Table -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-header-left">
+                            <div class="card-icon ci-purple">📦</div>
+                            <div>
+                                <h3>Items & Services</h3>
+                                <p>Add products or services</p>
+                            </div>
+                        </div>
+                        <span class="item-count-badge">Items: <span id="itemsCountLabel">0</span></span>
+                    </div>
+                    <div class="items-table-wrap">
+                        <table class="items-table">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Description</th>
+                                    <th>Qty</th>
+                                    <th>Unit</th>
+                                    <th>Rate</th>
+                                    <th>Disc%</th>
+                                    <th>VAT%</th>
+                                    <th>Amount</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="itemsBody"></tbody>
+                        </table>
+                    </div>
+                    <div class="add-item-row">
+                        <button class="add-item-btn" onclick="addItem()">➕ Add New Item</button>
+                        <small style="color:var(--text3);">💡 Tip: Ctrl+S to save</small>
+                    </div>
+
+                    <!-- Totals -->
+                    <div class="totals-section">
+                        <div class="totals-box">
+                            <div class="total-row">
+                                <span class="t-label">Subtotal:</span>
+                                <span class="t-value" id="subtotal">AED 0.00</span>
+                            </div>
+                            <div class="total-row">
+                                <span class="t-label">Item Discount:</span>
+                                <span class="t-value red" id="itemDiscTotal">- AED 0.00</span>
+                            </div>
+                            <div class="total-row">
+                                <span class="t-label">Taxable Amount:</span>
+                                <span class="t-value" id="taxableAmt">AED 0.00</span>
+                            </div>
+                            <div class="total-row">
+                                <span class="t-label">VAT:</span>
+                                <span class="t-value" id="vatAmt">AED 0.00</span>
+                            </div>
+                            <div class="total-row">
+                                <span class="t-label">Extra Discount:</span>
+                                <div class="disc-wrap">
+                                    <input type="number" id="extraDisc" value="0" min="0" step="0.01" oninput="calcAll()">
+                                    <select id="extraDiscType" onchange="calcAll()">
+                                        <option value="amt">AMT</option>
+                                        <option value="pct">%</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="total-row grand-total">
+                                <span class="t-label">GRAND TOTAL:</span>
+                                <span class="t-value" id="grandTotal">AED 0.00</span>
+                            </div>
+                            <div class="amount-words">
+                                <div class="aw-label">Amount in Words</div>
+                                <div class="aw-text" id="amountWords">Zero Dirhams Only</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Notes & Terms -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-header-left">
+                            <div class="card-icon ci-cyan">📝</div>
+                            <div>
+                                <h3>Notes & Terms</h3>
+                                <p>Additional information</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-grid">
+                            <div class="form-group col-full">
+                                <label class="form-label">Notes / Thank You Message</label>
+                                <textarea id="notes" class="form-textarea"></textarea>
+                            </div>
+                            <div class="form-group col-full">
+                                <label class="form-label">Terms & Conditions</label>
+                                <textarea id="terms" class="form-textarea"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bank Details -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-header-left">
+                            <div class="card-icon ci-green">🏦</div>
+                            <div>
+                                <h3>Bank Details</h3>
+                                <p>Payment information</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label class="form-label">Bank Name</label>
+                                <input type="text" id="bankName" class="form-input">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Account Name</label>
+                                <input type="text" id="accName" class="form-input">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Account Number</label>
+                                <input type="text" id="accNo" class="form-input">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">IBAN</label>
+                                <input type="text" id="iban" class="form-input">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">SWIFT</label>
+                                <input type="text" id="swift" class="form-input">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Branch</label>
+                                <input type="text" id="branch" class="form-input">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="card action-card">
+                    <div class="card-body">
+                        <div class="action-title">
+                            <h3>🚀 Actions</h3>
+                            <p>Save, download, print or share your invoice</p>
+                        </div>
+                        <div class="action-buttons">
+                            <button class="action-btn btn-gold" onclick="saveInvoice()">
+                                <div class="ab-icon">💾</div>
+                                <div class="ab-text">Save Invoice</div>
+                                <div class="ab-desc">Ctrl+S</div>
+                            </button>
+                            <button class="action-btn btn-primary" onclick="downloadPDF()">
+                                <div class="ab-icon">📥</div>
+                                <div class="ab-text">Download PDF</div>
+                                <div class="ab-desc">Ctrl+D</div>
+                            </button>
+                            <button class="action-btn btn-outline" onclick="previewPDF()">
+                                <div class="ab-icon">👁️</div>
+                                <div class="ab-text">Preview</div>
+                                <div class="ab-desc">View PDF</div>
+                            </button>
+                            <button class="action-btn btn-primary" onclick="printPDF()">
+                                <div class="ab-icon">🖨️</div>
+                                <div class="ab-text">Print</div>
+                                <div class="ab-desc">Ctrl+P</div>
+                            </button>
+                            <button class="action-btn btn-drive" id="driveBtn" onclick="saveToDrive()">
+                                <div class="ab-icon">☁️</div>
+                                <div class="ab-text">Save to Drive</div>
+                                <div class="ab-desc">Google Drive</div>
+                            </button>
+                            <button class="action-btn btn-info" onclick="shareWhatsApp()">
+                                <div class="ab-icon">💬</div>
+                                <div class="ab-text">WhatsApp</div>
+                                <div class="ab-desc">Send now</div>
+                            </button>
+                            <button class="action-btn btn-danger" onclick="resetForm()">
+                                <div class="ab-icon">🔄</div>
+                                <div class="ab-text">Reset Form</div>
+                                <div class="ab-desc">Clear all</div>
+                            </button>
+                        </div>
+                        <div class="status-bar" id="statusBar"></div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- ═══════ INVOICES LIST PAGE ═══════ -->
+            <div class="page" id="page-invoices">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-header-left">
+                            <div class="card-icon ci-blue">📄</div>
+                            <div>
+                                <h3>All Invoices</h3>
+                                <p>Manage all your invoices</p>
+                            </div>
+                        </div>
+                        <div style="display:flex;gap:10px;">
+                            <select id="filterStatus" class="form-select" onchange="filterInvoiceList()" style="width:auto;">
+                                <option value="">All Status</option>
+                                <option value="pending">Pending</option>
+                                <option value="paid">Paid</option>
+                                <option value="overdue">Overdue</option>
+                                <option value="draft">Draft</option>
+                                <option value="cancelled">Cancelled</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div id="invoiceListContainer"></div>
+                </div>
+            </div>
+
+            <!-- ═══════ CLIENTS PAGE ═══════ -->
+            <div class="page" id="page-clients">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-header-left">
+                            <div class="card-icon ci-gold">👥</div>
+                            <div>
+                                <h3>Saved Clients</h3>
+                                <p>Manage client database</p>
+                            </div>
+                        </div>
+                        <button class="topbar-btn btn-gold" onclick="goToCreateForClient()">➕ Add Client</button>
+                    </div>
+                    <div id="clientsContainer"></div>
+                </div>
+            </div>
+
+            <!-- ═══════ SETTINGS PAGE ═══════ -->
+            <div class="page" id="page-settings">
+                
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-header-left">
+                            <div class="card-icon ci-blue">🏢</div>
+                            <div>
+                                <h3>Company Info</h3>
+                                <p>Your company details</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label class="form-label">Company Name</label>
+                                <input type="text" id="setCompName" class="form-input">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Email</label>
+                                <input type="email" id="setEmail" class="form-input">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Phone</label>
+                                <input type="text" id="setPhone" class="form-input">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">TRN</label>
+                                <input type="text" id="setTrn" class="form-input">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Website</label>
+                                <input type="text" id="setWeb" class="form-input">
+                            </div>
+                            <div class="form-group col-2">
+                                <label class="form-label">Address</label>
+                                <input type="text" id="setAddr" class="form-input">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-header-left">
+                            <div class="card-icon ci-gold">📄</div>
+                            <div>
+                                <h3>Invoice Settings</h3>
+                                <p>Default configuration</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label class="form-label">Invoice Prefix</label>
+                                <input type="text" id="setPrefix" class="form-input">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Next Number</label>
+                                <input type="number" id="setNextNum" class="form-input">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Default VAT (%)</label>
+                                <input type="number" id="setVat" class="form-input" min="0" max="100" step="0.01">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Due Days</label>
+                                <input type="number" id="setDueDays" class="form-input" min="0">
+                            </div>
+                            <div class="form-group col-full">
+                                <label class="form-label">Payment Terms</label>
+                                <textarea id="setTerms" class="form-textarea"></textarea>
+                            </div>
+                            <div class="form-group col-full">
+                                <label class="form-label">Thank You Message</label>
+                                <textarea id="setThankYou" class="form-textarea"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-header-left">
+                            <div class="card-icon ci-green">🏦</div>
+                            <div>
+                                <h3>Bank Details</h3>
+                                <p>Default bank information</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label class="form-label">Bank Name</label>
+                                <input type="text" id="setBankName" class="form-input">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Account Name</label>
+                                <input type="text" id="setAccName" class="form-input">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Account Number</label>
+                                <input type="text" id="setAccNo" class="form-input">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">IBAN</label>
+                                <input type="text" id="setIban" class="form-input">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">SWIFT</label>
+                                <input type="text" id="setSwift" class="form-input">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Branch</label>
+                                <input type="text" id="setBranch" class="form-input">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card action-card">
+                    <div class="card-body">
+                        <button class="topbar-btn btn-gold" onclick="saveSettings()" style="width:100%;padding:14px;font-size:0.95rem;">💾 Save All Settings</button>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-header-left">
+                            <div class="card-icon ci-purple">💾</div>
+                            <div>
+                                <h3>Backup & Restore</h3>
+                                <p>Export or import data</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="action-buttons">
+                            <button class="action-btn btn-primary" onclick="exportAllJSON()">
+                                <div class="ab-icon">📤</div>
+                                <div class="ab-text">Export Backup</div>
+                                <div class="ab-desc">Download JSON</div>
+                            </button>
+                            <button class="action-btn btn-success" onclick="document.getElementById('importFile').click()">
+                                <div class="ab-icon">📥</div>
+                                <div class="ab-text">Import Backup</div>
+                                <div class="ab-desc">Restore data</div>
+                            </button>
+                            <input type="file" id="importFile" accept=".json" style="display:none;" onchange="importJSON(event)">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card danger-card">
+                    <div class="card-header">
+                        <div class="card-header-left">
+                            <div class="card-icon ci-red">⚠️</div>
+                            <div>
+                                <h3>Danger Zone</h3>
+                                <p>Irreversible actions</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="action-buttons">
+                            <button class="action-btn btn-danger" onclick="clearAllInvoices()">
+                                <div class="ab-icon">🗑️</div>
+                                <div class="ab-text">Delete Invoices</div>
+                                <div class="ab-desc">All invoices</div>
+                            </button>
+                            <button class="action-btn btn-danger" onclick="clearAllClients()">
+                                <div class="ab-icon">🗑️</div>
+                                <div class="ab-text">Delete Clients</div>
+                                <div class="ab-desc">All clients</div>
+                            </button>
+                            <button class="action-btn btn-danger" onclick="resetAllData()">
+                                <div class="ab-icon">💥</div>
+                                <div class="ab-text">Factory Reset</div>
+                                <div class="ab-desc">Delete EVERYTHING</div>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
+    </main>
+
+</div>
+
+<!-- 🪟 CLIENT PICKER MODAL -->
+<div class="modal-overlay" id="clientPickerModal">
+    <div class="modal">
+        <div class="modal-header">
+            <h3>👥 Select Client</h3>
+            <button class="modal-close" onclick="closeClientPicker()">✕</button>
+        </div>
+        <div class="modal-body">
+            <div class="search-wrap" style="margin-bottom:16px;">
+                <span class="search-icon">🔍</span>
+                <input type="text" placeholder="Search clients..." oninput="filterClientPicker(this.value)" style="width:100%;">
+            </div>
+            <div id="clientPickerList"></div>
+        </div>
+    </div>
+</div>
+
+<!-- ℹ️ ABOUT MODAL -->
+<div class="modal-overlay" id="aboutModal">
+    <div class="modal">
+        <div class="modal-header">
+            <h3>ℹ️ About This App</h3>
+            <button class="modal-close" onclick="document.getElementById('aboutModal').classList.remove('active')">✕</button>
+        </div>
+        <div class="modal-body">
+            <div class="about-content">
+                <img id="aboutLogo" src="company-logo.png" alt="Logo" class="app-logo" onerror="this.src='icon-512.png'">
+                <h2>ALBOWRY CARPENTRY LLC</h2>
+                <div class="about-tagline">Premium Woodwork Solutions</div>
+                <p>Professional invoice management system built for carpentry businesses in UAE.</p>
+                <p><strong>Features:</strong> Multi-currency support, VAT calculation, QR & Barcode, Cloud backup, PWA ready, Blue Theme.</p>
+                <div class="about-version">Version 3.1.0</div>
+                <div style="margin-top:20px;font-size:0.8rem;color:var(--text3);">
+                    Made with ❤️ in UAE 🇦🇪
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Hidden canvas for barcode -->
+<canvas id="barcodeCanvas" style="display:none;"></canvas>
+
+<!-- 📜 SCRIPTS -->
+<script src="config.js"></script>
+<script src="script.js"></script>
+
+<!-- Register Service Worker -->
+<script>
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js').then(reg => {
+            console.log('✅ SW registered');
+        }).catch(err => console.log('SW error:', err));
+    });
+}
+</script>
+
+</body>
+</html>
