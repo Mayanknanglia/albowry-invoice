@@ -23,7 +23,41 @@
 <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
 </head>
 <body>
+<div id="loginScreen" style="position:fixed;top:0;left:0;width:100%;height:100%;background:#1a1a1a;z-index:99999;display:flex;align-items:center;justify-content:center;flex-direction:column;">
+  <img src="company-logo.png" style="width:120px;margin-bottom:20px;">
+  <h2 style="color:white;">Al Bowry Invoice</h2>
+  <input type="password" id="pwdInput" placeholder="Enter Password" 
+    style="padding:12px;font-size:16px;border-radius:8px;border:none;margin:10px;width:250px;">
+  <button onclick="checkPwd()" 
+    style="padding:12px 30px;background:#4CAF50;color:white;border:none;border-radius:8px;font-size:16px;cursor:pointer;">
+    Login
+  </button>
+  <p id="pwdError" style="color:red;margin-top:10px;"></p>
+</div>
 
+<script>
+function checkPwd() {
+  const pwd = document.getElementById('pwdInput').value;
+  const correctPwd = "Neev@2111"; // ← YAHAN APNA PASSWORD DAALO
+  
+  if (pwd === correctPwd) {
+    localStorage.setItem('loggedIn', 'yes');
+    document.getElementById('loginScreen').style.display = 'none';
+  } else {
+    document.getElementById('pwdError').innerText = "Wrong Password!";
+  }
+}
+
+// Auto-login agar pehle se logged in hai
+if (localStorage.getItem('loggedIn') === 'yes') {
+  document.getElementById('loginScreen').style.display = 'none';
+}
+
+// Enter key se bhi login ho
+document.getElementById('pwdInput').addEventListener('keypress', function(e) {
+  if (e.key === 'Enter') checkPwd();
+});
+</script>
 <!-- 🎬 LOADING SCREEN -->
 <div class="loading-screen" id="loadingScreen">
     <div class="loading-content">
