@@ -34,23 +34,17 @@
   </button>
   <p id="pwdError" style="color:red;margin-top:10px;"></p>
 </div>
-
 <script>
 function checkPwd() {
   const pwd = document.getElementById('pwdInput').value;
-  const correctPwd = "Neev@2111"; // ← YAHAN APNA PASSWORD DAALO
+  const correctPwd = "Neev@2111";
   
   if (pwd === correctPwd) {
-    localStorage.setItem('loggedIn', 'yes');
     document.getElementById('loginScreen').style.display = 'none';
   } else {
     document.getElementById('pwdError').innerText = "Wrong Password!";
+    document.getElementById('pwdInput').value = "";
   }
-}
-
-// Auto-login agar pehle se logged in hai
-if (localStorage.getItem('loggedIn') === 'yes') {
-  document.getElementById('loginScreen').style.display = 'none';
 }
 
 // Enter key se bhi login ho
